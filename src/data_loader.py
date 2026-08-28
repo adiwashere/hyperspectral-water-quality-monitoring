@@ -1,9 +1,6 @@
 """
-data_loader.py
-==============
-Module for loading and generating Hyperspectral Water Quality datasets.
-
-This script handles:
+if csv is not uploaded then this will generate one
+if avail then load it to pandas
 1. Generating a bio-optically realistic hyperspectral water dataset if no dataset is present.
 2. Loading raw dataset files into pandas DataFrames.
 3. Separating hyperspectral band features (X) from the target parameter (y: Turbidity in NTU).
@@ -13,37 +10,28 @@ import os
 import numpy as np
 import pandas as pd
 
-# Define standard spectral wavelengths: 400nm to 900nm at 10nm increments (51 spectral bands)
+# 400nm to 900nm at 10nm increments (51 spectral bands)
 WAVELENGTHS = np.arange(400, 901, 10)
-BAND_COLS = [f"band_{w}nm" for w in WAVELENGTHS]
+BAND_COLS = [f"band_{w}nm" for w in WAVELENGTHS] #Ye automatically column names banata hai
 TARGET_COL = "turbidity_ntu"
 
 
 def generate_demo_dataset(file_path: str, n_samples: int = 500, random_seed: int = 42) -> pd.DataFrame:
     """
     Generates a physics-based bio-optical hyperspectral dataset for water quality.
-    
-    Bio-Optical Physics basis:
-    - Pure water absorbs light heavily in NIR (700-900nm) and weakly in Blue/Green (400-550nm).
-    - Suspended sediments (Turbidity) increase backscattering across all bands, especially Red/NIR.
-    - Chlorophyll-a adds an absorption trough around 675nm and a fluorescence/scattering peak around 700nm.
-    
-    Labels:
-    - Clear label: DEMO DATA - BIO-OPTICAL SIMULATION
     """
     np.random.seed(random_seed)
     
-    # 1. Generate realistic Turbidity values (0.5 NTU to 45.0 NTU)
-    # Log-normal distribution represents natural water body distributions well
+    # Log-normal distribution naturally positive values generate karti hai as it cant be negative value
     turbidity = np.random.lognormal(mean=1.8, sigma=0.8, size=n_samples)
-    turbidity = np.clip(turbidity, 0.5, 50.0)  # Restrict within standard freshwater range (NTU)
+    turbidity = np.clip(turbidity, 0.5, 50.0)  # min is 0.5 NTU and max is 50 NTU
+                                                #if generate value is 0.2 then it will be 0.5 NTU or 60 then it will be 50 NTU
 
     # 2. Generate Chlorophyll-a (1.0 to 80.0 ug/L) for spectral variation
     chl_a = 0.8 * turbidity + np.random.normal(5, 2, size=n_samples)
-    chl_a = np.clip(chl_a, 0.5, 100.0)
+    chl_a = np.clip(chl_a, 0.5, 100.0) #allowed range 0.5 to 100
 
-    # 3. Base absorption spectrum for pure water (a_w) and backscattering (b_bw)
-    # Wavelength array
+    # Base absorption spectrum for pure water (a_w) and backscattering (b_bw)
     w = WAVELENGTHS
     
     # Simulating Remote Sensing Reflectance R_rs(lambda)
@@ -64,7 +52,7 @@ def generate_demo_dataset(file_path: str, n_samples: int = 500, random_seed: int
         turb = turbidity[i]
         chla = chl_a[i]
         
-        # Particle backscattering b_bp scales linearly with turbidity/suspended sediments
+        # Particle backscattering b_bp scales linearly with turbidity
         b_bp = (0.012 * turb) * ((400.0 / w) ** 0.5)
         
         # Phytoplankton reflectance peak near 705nm
@@ -77,11 +65,11 @@ def generate_demo_dataset(file_path: str, n_samples: int = 500, random_seed: int
         # Remote Sensing Reflectance R_rs (sr^-1)
         r_rs = 0.05 * (b_b_total / (a_total + b_b_total))
         
-        # Add realistic sensor noise (SNR ~ 100:1)
+        # Add realistic sensor noise 
         sensor_noise = np.random.normal(0, 0.0003, size=len(w))
         r_rs_noisy = np.clip(r_rs + sensor_noise, 0.0001, 0.15)
         
-        reflectance_data.append(r_rs_noisy)
+        reflectance_data.append(r_rs_noisy) #store spectrum
         
     # Create DataFrame
     df_bands = pd.DataFrame(reflectance_data, columns=BAND_COLS)
@@ -92,9 +80,9 @@ def generate_demo_dataset(file_path: str, n_samples: int = 500, random_seed: int
         "data_source": "DEMO DATA - BIO-OPTICAL SIMULATION"
     })
 
-    df_full = pd.concat([df_target, df_bands], axis=1)
+    df_full = pd.concat([df_target, df_bands], axis=1) #horizontally combine both dataset
 
-    # Ensure output directory exists
+    # Ensure output directory exists if not then create one
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     df_full.to_csv(file_path, index=False)
     print(f"[data_loader] Demo hyperspectral dataset saved successfully to: {file_path}")
@@ -104,11 +92,7 @@ def generate_demo_dataset(file_path: str, n_samples: int = 500, random_seed: int
 def load_dataset(file_path: str) -> tuple[pd.DataFrame, list[str], str]:
     """
     Loads raw CSV dataset from disk. If missing, generates the bio-optical demo dataset.
-    
-    Returns:
-        df (pd.DataFrame): Complete DataFrame
-        band_cols (list[str]): Names of feature columns (X)
-        target_col (str): Name of target column (y)
+
     """
     if not os.path.exists(file_path):
         print(f"[data_loader] File not found at {file_path}. Initializing bio-optical demo dataset...")
@@ -125,7 +109,6 @@ def load_dataset(file_path: str) -> tuple[pd.DataFrame, list[str], str]:
 
 
 if __name__ == "__main__":
-    # Self-test when run directly
     raw_data_path = os.path.join("data", "raw", "water_quality_hyperspectral_data.csv")
     df, bands, target = load_dataset(raw_data_path)
     print(f"Dataset Loaded Successfully!")
