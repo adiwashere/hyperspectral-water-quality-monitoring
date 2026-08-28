@@ -1,0 +1,5 @@
+Model,Raw Features,Raw MAE (NTU),Raw RMSE (NTU),Raw R2,Raw Time (s),PCA Features,PCA MAE (NTU),PCA RMSE (NTU),PCA R2,PCA Time (s)
+Linear Regression,51 Bands,0.2967,0.4038,0.9968,0.0028,2 Components,0.3755,0.6093,0.9927,0.0013
+Support Vector Regression,51 Bands,0.132,0.6469,0.9918,0.0044,2 Components,0.1198,0.6207,0.9924,0.0054
+Random Forest Regressor,51 Bands,0.0677,0.2204,0.999,0.4171,2 Components,0.0837,0.2009,0.9992,0.1253
+XGBoost Regressor,51 Bands,0.1906,0.7845,0.9879,0.1907,2 Components,0.1003,0.2129,0.9991,0.125
